@@ -2,12 +2,13 @@ from rest_framework import viewsets, generics, permissions, parsers, status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from . import serializers
-from .models import User, MemberProfile, Package, MemberPackage, Schedule, Review, Progress, Payment, Notification, Chat, Message
+from .models import User, MemberProfile, Package, MemberPackage, Schedule, Review, Progress, Payment, Notification, Chat, Message, PtProfile,Comment
 from .serializers import UserSerializer, MemberProfileSerializer, ScheduleSerializer, PackageSerializer, MemberPackageSerializer
 from .serializers import ReviewSerializer, ProgressSerializer, PaymentSerializer, NotificationSerializer, ChatSerializer, MessageSerializer
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from GymApp import perms
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
@@ -108,9 +109,12 @@ class ScheduleViewSet(viewsets.ModelViewSet):
             raise ValidationError("You do not have permission to update this schedule.")
 
 class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
+    queryset = Review.objects.filter()
+    serializer_class = serializers.ReviewSerializer
+
+
+
+
 
     def get_queryset(self):
         if self.request.user.is_superuser:
@@ -192,3 +196,34 @@ class MessageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(sender=self.request.user)
 
+class PtProfileViewSet(viewsets.ViewSet,generics.ListAPIView, generics.RetrieveAPIView):
+    queryset = PtProfile.objects.filter()
+    serializer_class = serializers.PtProfileSerializer
+
+    def get_permissions(self):
+        if self.action in ['get_reviews'] and self.request.method.__eq__('POST'):
+            return [permissions.IsAuthenticated()]
+
+        return [permissions.AllowAny()]
+
+
+
+    @action(methods=['get', 'post'], detail=True, url_path='comments')
+    def get_comments(self, request, pk):
+        if request.method.__eq__('POST'):
+            u = serializers.CommentSerializer(data={
+                'content': request.data.get('content'),
+                'rating' : request.data.get('rating'),
+                'user': request.user.pk,
+                'pt_profile': pk
+            })
+            u.is_valid(raise_exception=True)
+            c = u.save()
+            return Response(serializers.CommentSerializer(c).data, status=status.HTTP_201_CREATED)
+        else:
+            comments = self.get_object().comment_set.select_related('user').filter(active=True)
+            return Response(serializers.CommentSerializer(comments, many=True).data, status=status.HTTP_200_OK)
+class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
+    queryset = Comment.objects.filter(active=True)
+    serializer_class = serializers.CommentSerializer
+    permission_classes = [perms.IsCommentOwner]

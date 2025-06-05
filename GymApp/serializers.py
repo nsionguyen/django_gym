@@ -1,5 +1,7 @@
 from rest_framework import serializers
-from .models import User, MemberProfile, Package, MemberPackage, Schedule, Progress, Review, Payment, Notification, Chat, ChatParticipant, Message
+from .models import User, MemberProfile, Package, MemberPackage, Schedule, Progress, Review, Payment, Notification, \
+    Chat, ChatParticipant, Message, PtProfile, Comment
+
 
 class UserSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
@@ -19,7 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone', 'role', 'created_at', 'last_login')
+        fields = ('id', 'username', 'email', 'first_name', 'last_name', 'phone', 'role', 'created_at', 'last_login','password')
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -37,7 +39,7 @@ class MemberProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MemberProfile
-        fields = ('id', 'user', 'height', 'weight', 'bmi', 'updated_at')
+        fields = ['id', 'user', 'height', 'weight', 'bmi', 'updated_at']
 
 
 class PackageSerializer(serializers.ModelSerializer):
@@ -103,19 +105,19 @@ class ProgressSerializer(serializers.ModelSerializer):
         read_only_fields = ['pt', 'recorded_at']
 
 class ReviewSerializer(serializers.ModelSerializer):
-    # user = UserSerializer(read_only=True)
-    # pt = UserSerializer(read_only=True)
-    # user_id = serializers.PrimaryKeyRelatedField(
-    #     queryset=User.objects.filter(role='member'),
-    #     source='user',
-    #     write_only=True
-    # )
-    # pt_id = serializers.PrimaryKeyRelatedField(
-    #     queryset=User.objects.filter(role='pt'),
-    #     source='pt',
-    #     write_only=True,
-    #     allow_null=True
-    # )
+    user = UserSerializer(read_only=True)
+    pt = UserSerializer(read_only=True)
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(role='member'),
+        source='user',
+        write_only=True
+    )
+    pt_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(role='pt'),
+        source='pt',
+        write_only=True,
+        allow_null=True
+    )
     def to_representation(self, instance):
         data = super().to_representation(instance)
         data['user'] = UserSerializer(instance.user).data
@@ -165,3 +167,24 @@ class ChatSerializer(serializers.ModelSerializer):
         model = Chat
         fields = ['id', 'chat_name', 'is_group', 'last_message', 'last_updated', 'firebase_chat_id', 'participants', 'messages']
 
+ # Nguyen them
+class CommentSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['user'] = UserSerializer(instance.user).data
+        return data
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'content', 'rating', 'created_date', 'updated_date', 'user', 'pt_profile']
+        extra_kwargs = {
+            'lesson': {
+                'write_only': True
+            }
+        }
+
+class PtProfileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PtProfile
+        fields = ['id','certification', 'experience_years','total_rating','nickname']

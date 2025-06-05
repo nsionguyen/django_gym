@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
+
+
 #Models User
 class User(AbstractUser):
     ROLES = (
@@ -317,3 +319,36 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender.username}: {self.content[:50]}"
+
+# Nguyen them
+class PtProfile(models.Model):
+    id = models.OneToOneField(User, on_delete=models.CASCADE, related_name='pt_profile',primary_key=True)
+    certification = models.CharField(max_length=100)
+    experience_years = models.CharField(max_length=10)
+    nickname = models.CharField(max_length=10, blank=True)
+    total_rating = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+
+
+class Interaction(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    pt_profile = models.ForeignKey(PtProfile, on_delete=models.CASCADE)
+
+    class Meta:
+        abstract = True
+
+class Comment(Interaction):
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    content = models.CharField(max_length=255)
+    rating = models.DecimalField(max_digits=2, decimal_places=1, null=True, blank=True)
+
+    def __str__(self):
+        return self.content
+
+
+
+
+
+
+

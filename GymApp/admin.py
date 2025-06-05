@@ -73,12 +73,12 @@ class ScheduleAdmin(admin.ModelAdmin):
             return False  # PT không được xóa lịch
         return True
 
-@admin.register(Review)
-class ReviewAdmin(admin.ModelAdmin):
-    list_display = ('user', 'pt', 'gym_rating', 'pt_rating', 'created_at')
-    list_filter = ('gym_rating', 'pt_rating')
-    search_fields = ('user__username', 'pt__username', 'comment')
-    date_hierarchy = 'created_at'
+# @admin.register(Review)
+# class ReviewAdmin(admin.ModelAdmin):
+#     list_display = ('user', 'pt', 'gym_rating', 'pt_rating', 'created_at')
+#     list_filter = ('gym_rating', 'pt_rating')
+#     search_fields = ('user__username', 'pt__username', 'comment')
+#     date_hierarchy = 'created_at'
 
 #
 @admin.register(Progress)
